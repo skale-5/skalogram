@@ -3,6 +3,10 @@
 Education purpose Nerds Instagram Clone
 
 ## Level 0 - Command Line App
+
+![rick.jpg](docs/rick.png)
+
+
 ### Usage
 ```
 $ ./skalogram-cli -help
