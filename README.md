@@ -4,8 +4,9 @@ Education purpose Nerds Instagram Clone
 
 ## Level 0 - Command Line App
 
-![rick.jpg](docs/rick.png)
+Skalogram Cli App allows you to print any image directly to the terminal and ask you if you like it. Votes are localy stored in JSON database.
 
+![rick.jpg](docs/rick.png)
 
 ### Usage
 ```
