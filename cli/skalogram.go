@@ -68,6 +68,7 @@ func NewDatabase(dbPath string) *Database {
 }
 
 func main() {
+
 	// Parse command line arguments
 	imagePath := flag.String("image", "", "path to the image you want to print (required)")
 	dbPath := flag.String("db-path", "./.db.json", "path to the skalogram database")

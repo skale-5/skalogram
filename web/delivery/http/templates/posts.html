@@ -1,0 +1,33 @@
+{{ $posts := .Posts }}
+{{ $postsAsciiHTML := .PostsAsciiHTML }}
+
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inconsolata&family=Lora:wght@600&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="">
+        <h1 class="text-3xl font-bold underline m-auto text-center mt-4">
+            Skalogram Web
+        </h1>
+        <div class="p-10 grid grid-cols-4 gap-4 place-content-center m-auto text-center">
+            {{ range $i, $post := $posts }}
+            <div>
+                <div class="bg-black text-xs space-x-0 text-white p-4 m-2" style="white-space: pre; font-family: 'Inconsolata', monospace;">{{ index $postsAsciiHTML $i }}</div>
+                <div class="font-bold"><a href="/downvote?id={{$post.ID}}">⇩</a>{{$post.Score}}<a href="/upvote?id={{$post.ID}}">⇧</a></div>
+            </div>
+            {{ end }}
+        </div>
+    </div>
+</body>
+
+</html>
