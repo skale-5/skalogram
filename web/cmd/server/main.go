@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 
 	"github.com/skale-5/skalogram/web"
 	"github.com/skale-5/skalogram/web/delivery/http"
+	"github.com/skale-5/skalogram/web/pkg/gcs"
 	"github.com/skale-5/skalogram/web/pkg/postgresql/post"
 	"github.com/skale-5/skalogram/web/pkg/redis"
 
@@ -31,18 +33,23 @@ func main() {
 		log.Fatal(err)
 	}
 
-	postCacheService := &web.PostCacheService{
-		Adapter: redis.NewClient("127.0.0.1:6379"),
-	}
+	postCacheService := web.NewPostCacheService(
+		redis.NewClient("127.0.0.1:6379"),
+	)
 
-	postDatabaseService := &web.PostDatabaseService{
-		Adapter: post.New(db),
-	}
+	postDatabaseService := web.NewPostDatabaseService(
+		post.New(db),
+	)
+
+	postStorageService := web.NewPostStorageService(
+		gcs.NewClient(context.Background()),
+	)
 
 	server := http.NewServer(http.NewServerArgs{
 		ListenAddr:          "0.0.0.0:8080",
 		PostDatabaseService: postDatabaseService,
 		PostCacheService:    postCacheService,
+		PostStorageService:  postStorageService,
 	})
 	server.Run()
 }

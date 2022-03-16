@@ -19,6 +19,9 @@
         <h1 class="text-3xl font-bold underline m-auto text-center mt-4">
             Skalogram Web
         </h1>
+        <h2 class="text-2xl m-auto text-center mt-4">
+            SKALE-5's nerd instagram for educational purpose (Cloud Native, Redis, Postgresql, Object Storage)
+        </h2>
         <div class="p-10 grid grid-cols-4 gap-4 place-content-center m-auto text-center">
             {{ range $i, $post := $posts }}
             <div>
@@ -26,6 +29,33 @@
                 <div class="font-bold"><a href="/downvote?id={{$post.ID}}">⇩</a>{{$post.Score}}<a href="/upvote?id={{$post.ID}}">⇧</a></div>
             </div>
             {{ end }}
+            <div class="bg-black m-2 mb-7 p-4 text-white">
+                <form action="/upload" method="post" enctype="multipart/form-data">
+                    <div class="flex justify-center">
+                        <div class="mb-3 w-96">
+                            <label for="formFile" class="form-label inline-block mb-2">Upload image</label>
+                            <input class="form-control
+                            block
+                            w-full
+                            px-3
+                            py-1.5
+                            text-base
+                            font-normal
+                            text-gray-700
+                            bg-white bg-clip-padding
+                            border border-solid border-gray-300
+                            rounded
+                            transition
+                            ease-in-out
+                            m-0
+                            focus:text-gray-700 focus:bg-white focus:border-green-300 focus:outline-none" type="file" name="postImg" id="formFile" >
+                        </div>
+                    </div>
+                    <div class="flex justify-center p-2 pr-4">
+                        <button class="w-20 px-4 py-2 text-white bg-green-500 rounded shadow-xl">Upload</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </body>

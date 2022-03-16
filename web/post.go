@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"image"
 	"io"
-	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,14 +30,8 @@ type Post struct {
 	CreatedAt time.Time
 }
 
-func (p *Post) GenerateAscii() (string, error) {
-
-	resp, err := http.Get(p.ImgUrl)
-	if err != nil {
-		return "", err
-	}
-
-	img, _, err := image.Decode(resp.Body)
+func GenerateAscii(file io.ReadCloser) (string, error) {
+	img, _, err := image.Decode(file)
 	if err != nil {
 		return "", err
 	}
@@ -56,7 +49,7 @@ func (p *Post) GenerateAscii() (string, error) {
 }
 
 type CreatePostParams struct {
-	Score  string
+	ID     uuid.UUID
 	ImgUrl string
 }
 
@@ -77,16 +70,22 @@ type PostCacheAdapter interface {
 }
 
 type PostStorageAdapter interface {
-	Write(ctx context.Context, id uuid.UUID, content io.Reader) (string, error)
-	Get(ctx context.Context, id uuid.UUID) (io.Reader, error)
+	Write(ctx context.Context, object *ObjectPath, content io.Reader) error
+	Get(ctx context.Context, object *ObjectPath) (io.ReadCloser, error)
 }
 
 type PostCacheService struct {
-	Adapter PostCacheAdapter
+	adapter PostCacheAdapter
+}
+
+func NewPostCacheService(a PostCacheAdapter) *PostCacheService {
+	return &PostCacheService{
+		adapter: a,
+	}
 }
 
 func (pcs *PostCacheService) CachePost(ctx context.Context, id uuid.UUID, content string, ttl time.Duration) (string, error) {
-	ret, err := pcs.Adapter.CachePost(ctx, id, content, ttl)
+	ret, err := pcs.adapter.CachePost(ctx, id, content, ttl)
 	if err != nil {
 		return "", err
 	}
@@ -98,7 +97,7 @@ func (pcs *PostCacheService) CachePost(ctx context.Context, id uuid.UUID, conten
 }
 
 func (pcs *PostCacheService) GetPost(ctx context.Context, id uuid.UUID) (string, error) {
-	ret, err := pcs.Adapter.GetPost(ctx, id)
+	ret, err := pcs.adapter.GetPost(ctx, id)
 	if err != nil {
 		return "", err
 	}
@@ -110,11 +109,17 @@ func (pcs *PostCacheService) GetPost(ctx context.Context, id uuid.UUID) (string,
 }
 
 type PostDatabaseService struct {
-	Adapter PostDatabaseAdapter
+	adapter PostDatabaseAdapter
+}
+
+func NewPostDatabaseService(a PostDatabaseAdapter) *PostDatabaseService {
+	return &PostDatabaseService{
+		adapter: a,
+	}
 }
 
 func (pds *PostDatabaseService) ListPosts(ctx context.Context) ([]Post, error) {
-	posts, err := pds.Adapter.ListPosts(ctx)
+	posts, err := pds.adapter.ListPosts(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("cannot list posts: %w", err)
 	}
@@ -122,7 +127,7 @@ func (pds *PostDatabaseService) ListPosts(ctx context.Context) ([]Post, error) {
 }
 
 func (pds *PostDatabaseService) UpvotePost(ctx context.Context, id uuid.UUID) error {
-	err := pds.Adapter.UpvotePost(ctx, id)
+	err := pds.adapter.UpvotePost(ctx, id)
 	if err != nil {
 		return fmt.Errorf("cannot upvote post: %w", err)
 	}
@@ -130,9 +135,35 @@ func (pds *PostDatabaseService) UpvotePost(ctx context.Context, id uuid.UUID) er
 }
 
 func (pds *PostDatabaseService) DownvotePost(ctx context.Context, id uuid.UUID) error {
-	err := pds.Adapter.DownvotePost(ctx, id)
+	err := pds.adapter.DownvotePost(ctx, id)
 	if err != nil {
 		return fmt.Errorf("cannot downvote post: %w", err)
 	}
 	return nil
+}
+
+func (pds *PostDatabaseService) CreatePost(ctx context.Context, args CreatePostParams) error {
+	_, err := pds.adapter.CreatePost(ctx, args)
+	if err != nil {
+		return fmt.Errorf("cannot create post: %w", err)
+	}
+	return nil
+}
+
+type PostStorageService struct {
+	adapter PostStorageAdapter
+}
+
+func NewPostStorageService(a PostStorageAdapter) *PostStorageService {
+	return &PostStorageService{
+		adapter: a,
+	}
+}
+
+func (pss *PostStorageService) Write(ctx context.Context, object *ObjectPath, r io.Reader) error {
+	return pss.adapter.Write(ctx, object, r)
+}
+
+func (pss *PostStorageService) Get(ctx context.Context, object *ObjectPath) (io.ReadCloser, error) {
+	return pss.adapter.Get(ctx, object)
 }

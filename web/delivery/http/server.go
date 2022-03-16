@@ -16,12 +16,14 @@ type Server struct {
 	listenAddr          string
 	postDatabaseService *web.PostDatabaseService
 	postCacheService    *web.PostCacheService
+	postStorageService  *web.PostStorageService
 }
 
 type NewServerArgs struct {
 	ListenAddr          string
 	PostDatabaseService *web.PostDatabaseService
 	PostCacheService    *web.PostCacheService
+	PostStorageService  *web.PostStorageService
 }
 
 func NewServer(args NewServerArgs) *Server {
@@ -29,6 +31,7 @@ func NewServer(args NewServerArgs) *Server {
 		listenAddr:          args.ListenAddr,
 		postDatabaseService: args.PostDatabaseService,
 		postCacheService:    args.PostCacheService,
+		postStorageService:  args.PostStorageService,
 	}
 }
 
@@ -39,6 +42,48 @@ func httpError(w http.ResponseWriter, code int, message string, err error) {
 }
 
 func (s *Server) voidHandler(w http.ResponseWriter, r *http.Request) {}
+
+func (s *Server) postsUploadHandler(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(32 << 20)
+	if err != nil {
+		httpError(w, http.StatusBadRequest, "failed to parse multipart form", err)
+		return
+	}
+
+	f, h, err := r.FormFile("postImg")
+	if err != nil {
+		httpError(w, http.StatusBadRequest, "failed to retreive file from request form", err)
+		return
+	}
+	defer f.Close()
+
+	id := uuid.New()
+
+	//TODO
+	_ = h
+
+	object, err := web.NewObjectPath("gs://skalogram-posts-dev/" + id.String())
+	if err != nil {
+		httpError(w, http.StatusInternalServerError, "failed to create object path", err)
+		return
+	}
+	err = s.postStorageService.Write(r.Context(), object, f)
+	if err != nil {
+		httpError(w, http.StatusBadRequest, "failed to upload object", err)
+		return
+	}
+
+	err = s.postDatabaseService.CreatePost(r.Context(), web.CreatePostParams{
+		ID:     id,
+		ImgUrl: object.URL(),
+	})
+	if err != nil {
+		httpError(w, http.StatusInternalServerError, "failed to create post", err)
+		return
+	}
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+
+}
 
 func (s *Server) postsUpvoteHandler(w http.ResponseWriter, r *http.Request) {
 	ids, ok := r.URL.Query()["id"]
@@ -98,7 +143,17 @@ func (s *Server) postsHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("[WARNING] failed to retreive ascii in cache")
 		}
 		if len(cachedAscii) == 0 {
-			postsAscii[i], err = post.GenerateAscii()
+			obj, err := web.NewObjectPath(post.ImgUrl)
+			if err != nil {
+				httpError(w, http.StatusInternalServerError, "invalid object path", err)
+				return
+			}
+			fileReader, err := s.postStorageService.Get(r.Context(), obj)
+			if err != nil {
+				httpError(w, http.StatusInternalServerError, "failed to get object", err)
+				return
+			}
+			postsAscii[i], err = web.GenerateAscii(fileReader)
 			if err != nil {
 				httpError(w, http.StatusInternalServerError, "failed to generate post ascii", err)
 				return
@@ -129,6 +184,7 @@ func (s *Server) Run() {
 	http.HandleFunc("/", s.postsHandler)
 	http.HandleFunc("/upvote", s.postsUpvoteHandler)
 	http.HandleFunc("/downvote", s.postsDownvoteHandler)
+	http.HandleFunc("/upload", s.postsUploadHandler)
 
 	http.HandleFunc("/favicon.ico", s.voidHandler)
 
