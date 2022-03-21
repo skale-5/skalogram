@@ -2,7 +2,6 @@ package gcs
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 
@@ -35,7 +34,6 @@ func (c *Client) Write(ctx context.Context, object *web.ObjectPath, content io.R
 		return err
 	}
 
-	fmt.Println("DEBUG", obj.BucketName(), " ", obj.ObjectName())
 	return nil
 }
 

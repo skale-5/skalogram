@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/skale-5/skalogram/web"
+	"github.com/skale-5/skalogram/web/config"
 	"github.com/skale-5/skalogram/web/delivery/http/templates"
 )
 
@@ -59,10 +60,23 @@ func (s *Server) postsUploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := uuid.New()
 
-	//TODO
-	_ = h
+	allowedContentType := map[string]bool{
+		"image/png":  true,
+		"image/jpeg": true,
+	}
 
-	object, err := web.NewObjectPath("gs://skalogram-posts-dev/" + id.String())
+	if !allowedContentType[h.Header.Get("Content-Type")] {
+		err = fmt.Errorf("unauthorized file format: %s", h.Header.Get("Content-Type"))
+		httpError(w, http.StatusBadRequest, "file format not allowed", err)
+		return
+	}
+
+	fullObjectPath := fmt.Sprintf("%s://%s/%s",
+		config.Env().Get("STORAGE_TYPE"),
+		config.Env().Get("STORAGE_BUCKET"),
+		id.String(),
+	)
+	object, err := web.NewObjectPath(fullObjectPath)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, "failed to create object path", err)
 		return
@@ -158,7 +172,14 @@ func (s *Server) postsHandler(w http.ResponseWriter, r *http.Request) {
 				httpError(w, http.StatusInternalServerError, "failed to generate post ascii", err)
 				return
 			}
-			_, err = s.postCacheService.CachePost(r.Context(), post.ID, postsAscii[i], time.Second*60)
+
+			ttlConfig := config.Env().Get("CACHE_TTL")
+			ttl, err := time.ParseDuration(ttlConfig)
+			if err != nil {
+				httpError(w, http.StatusInternalServerError, "invalid CACHE_TTL duration format", err)
+				return
+			}
+			_, err = s.postCacheService.CachePost(r.Context(), post.ID, postsAscii[i], ttl)
 			if err != nil {
 				log.Println("[WARNING] failed to cache ascii")
 			}
