@@ -1,0 +1,42 @@
+version: '2'
+services:
+  redis:
+    image: redis
+    networks:
+      - skalogram
+    ports: 
+      - 6379:6379
+    volumes:
+      - rd-data:/data
+  postgres:
+    image: postgres
+    networks:
+      - skalogram
+    ports: 
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+  skalogram:
+    image: skalogram
+    networks:
+      - skalogram
+    ports:
+      - 8080:8080
+    environment:
+      STORAGE_BUCKET: #You must provide an S3 or GCS bucket
+      STORAGE_BUCKET_REGION: #You must provide a region for your bucket
+      STORAGE_TYPE: #You must provide which engine for your object storage to use (S3 or GCS).
+      REDIS_HOST: redis
+      PG_HOST: postgres
+      AWS_ACCESS_KEY_ID: #Give an Access Key ID
+      AWS_SECRET_ACCESS_KEY: #Give a Secret Key ID
+      AWS_SESSION_TOKEN: #Give a Session Token if you use STS
+networks:
+  skalogram:
+volumes:
+  pg-data:
+    driver: local
+  rd-data:
+    driver: local
