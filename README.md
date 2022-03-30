@@ -88,6 +88,11 @@ Compiled binaries are available in the [releases page](https://github.com/skale-
 
 Dont forget to make binary executable: `chmod +x skalogram-web`
 
+### Docker
+
+    cd ./web
+    docker build -t skalogram-web .
+
 ### Compile
 
 ```
