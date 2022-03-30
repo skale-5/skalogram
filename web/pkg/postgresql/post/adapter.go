@@ -8,6 +8,20 @@ import (
 	"github.com/skale-5/skalogram/web"
 )
 
+const createTable = `-- name: createTable :exec
+CREATE TABLE IF NOT EXISTS posts (
+	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+	score INTEGER NOT NULL DEFAULT 0,
+	img_url TEXT NOT NULL,
+	created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+`
+
+func (q *Queries) CreateTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createTable)
+	return err
+}
+
 const createPost = `-- name: CreatePost :execresult
 INSERT INTO posts (
   id, img_url

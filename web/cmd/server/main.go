@@ -50,6 +50,11 @@ func main() {
 		post.New(db),
 	)
 
+	err = postDatabaseService.CreateTable(ctx)
+	if err != nil {
+		log.Fatalf("failed to init table on startup: %s\n", err.Error())
+	}
+
 	// CACHE SERVICE
 	redisConn := fmt.Sprintf("%s:%s",
 		config.Env().Get("REDIS_HOST"),
@@ -58,6 +63,9 @@ func main() {
 	postCacheService := web.NewPostCacheService(
 		redis.NewClient(redisConn),
 	)
+	if err := postCacheService.Ping(ctx); err != nil {
+		log.Printf("[WARNING] failed to ping cache service (redis). Skalogram will run as degraded mode: %s\n", err.Error())
+	}
 
 	// STORAGE SERVICE
 	var postStorageService *web.PostStorageService

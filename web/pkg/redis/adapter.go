@@ -23,6 +23,14 @@ func NewClient(addr string) *Client {
 	return &Client{rc: rc}
 }
 
+func (c *Client) Ping(ctx context.Context) error {
+	status := c.rc.Ping(ctx)
+	if status.Err() != nil {
+		return status.Err()
+	}
+	return nil
+}
+
 func (c *Client) CachePost(ctx context.Context, id uuid.UUID, content interface{}, ttl time.Duration) (interface{}, error) {
 	err := c.rc.Set(ctx, id.String(), content, ttl).Err()
 	if err != nil {

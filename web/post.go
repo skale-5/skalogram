@@ -14,15 +14,6 @@ import (
 	"github.com/robert-nix/ansihtml"
 )
 
-/*
-CREATE TABLE posts (
-	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-	score INTEGER NOT NULL DEFAULT 0,
-	img_url TEXT NOT NULL,
-	created_at TIMESTAMP NOT NULL DEFAULT now()
-);
-*/
-
 type Post struct {
 	ID        uuid.UUID
 	Score     int
@@ -54,6 +45,7 @@ type CreatePostParams struct {
 }
 
 type PostDatabaseAdapter interface {
+	CreateTable(ctx context.Context) error
 	CreatePost(ctx context.Context, arg CreatePostParams) (sql.Result, error)
 	DeletePost(ctx context.Context, id uuid.UUID) error
 	GetPost(ctx context.Context, id uuid.UUID) (Post, error)
@@ -65,6 +57,7 @@ type PostDatabaseAdapter interface {
 var ErrPostCacheNotFound = errors.New("post not found in cache")
 
 type PostCacheAdapter interface {
+	Ping(ctx context.Context) error
 	CachePost(ctx context.Context, id uuid.UUID, content interface{}, ttl time.Duration) (interface{}, error)
 	GetPost(ctx context.Context, id uuid.UUID) (interface{}, error)
 }
@@ -82,6 +75,10 @@ func NewPostCacheService(a PostCacheAdapter) *PostCacheService {
 	return &PostCacheService{
 		adapter: a,
 	}
+}
+
+func (pcs *PostCacheService) Ping(ctx context.Context) error {
+	return pcs.adapter.Ping(ctx)
 }
 
 func (pcs *PostCacheService) CachePost(ctx context.Context, id uuid.UUID, content string, ttl time.Duration) (string, error) {
@@ -116,6 +113,14 @@ func NewPostDatabaseService(a PostDatabaseAdapter) *PostDatabaseService {
 	return &PostDatabaseService{
 		adapter: a,
 	}
+}
+
+func (pds *PostDatabaseService) CreateTable(ctx context.Context) error {
+	err := pds.adapter.CreateTable(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot create post table: %w", err)
+	}
+	return nil
 }
 
 func (pds *PostDatabaseService) ListPosts(ctx context.Context) ([]Post, error) {

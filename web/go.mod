@@ -1,9 +1,10 @@
 module github.com/skale-5/skalogram/web
 
-go 1.17
+go 1.18
 
 require (
 	cloud.google.com/go/storage v1.21.0
+	github.com/aws/aws-sdk-go v1.43.21
 	github.com/go-redis/redis/v8 v8.11.4
 	github.com/google/uuid v1.3.0
 	github.com/lib/pq v1.10.4
@@ -15,7 +16,6 @@ require (
 	cloud.google.com/go v0.100.2 // indirect
 	cloud.google.com/go/compute v1.2.0 // indirect
 	cloud.google.com/go/iam v0.1.1 // indirect
-	github.com/aws/aws-sdk-go v1.43.21 // indirect
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
