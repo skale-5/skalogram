@@ -201,11 +201,21 @@ func (s *Server) postsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) healthzHandler(w http.ResponseWriter, r *http.Request) {
+	_, err := fmt.Fprint(w, "200 OK")
+	if err != nil {
+		httpError(w, http.StatusInternalServerError, "failed to render posts", err)
+		return
+	}
+	return
+}
+
 func (s *Server) Run() {
 	http.HandleFunc("/", s.postsHandler)
 	http.HandleFunc("/upvote", s.postsUpvoteHandler)
 	http.HandleFunc("/downvote", s.postsDownvoteHandler)
 	http.HandleFunc("/upload", s.postsUploadHandler)
+	http.HandleFunc("/healthz", s.healthzHandler)
 
 	http.HandleFunc("/favicon.ico", s.voidHandler)
 

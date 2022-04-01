@@ -52,7 +52,7 @@ func main() {
 
 	err = postDatabaseService.CreateTable(ctx)
 	if err != nil {
-		log.Fatalf("failed to init table on startup: %s\n", err.Error())
+		//log.Fatalf("failed to init table on startup: %s\n", err.Error())
 	}
 
 	// CACHE SERVICE
